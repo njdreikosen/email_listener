@@ -4,7 +4,7 @@ import html2text
 from imapclient import IMAPClient
 import os
 
-from helper import (
+from .helpers import (
     calc_timeout,
     get_time,
 )
@@ -36,7 +36,7 @@ class email_listener:
         # For each unseen message
         for uid, message_data in self.server.fetch(messages, 'RFC822').items():
             # Get the message
-            email_message = email.message_from bytes(message_data[b'RFC822'])
+            email_message = email.message_from_bytes(message_data[b'RFC822'])
             # Get who the message is from
             user = email_message.get('From')
 

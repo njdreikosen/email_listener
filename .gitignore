@@ -21,3 +21,6 @@ wheels/
 *.egg-info
 *.egg
 
+# Extras
+experiment*
+
