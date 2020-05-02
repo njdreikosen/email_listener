@@ -14,7 +14,7 @@ setup(
         'License :: OSI Approved :: GNU General Public License v3',
         'Programming Language :: Python :: 3.7',
         'Topic :: Communications :: Email',
-    ]
+    ],
     url='https://github.com/njdreikosen/email_listener',
     author='Noah Dreikosen',
     author_email='ndreikosen@gmail.com',
