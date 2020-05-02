@@ -23,4 +23,6 @@ wheels/
 
 # Extras
 experiment*
+*TODO.txt
+*.swp
 
