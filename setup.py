@@ -3,9 +3,10 @@ from setuptools import setup
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
-setup(name='email_listener',
+setup(
+    name='email_listener',
     version='0.1',
-    description='',
+    description='Listen in an email folder and process incoming emails.',
     long_description=long_description,
     long_description_content_type=text/markdown,
     classifiers=[
@@ -14,17 +15,19 @@ setup(name='email_listener',
         'Programming Language :: Python :: 3.7',
         'Topic :: Communications :: Email',
     ]
-    url='',
+    url='https://github.com/njdreikosen/email_listener',
     author='Noah Dreikosen',
     author_email='ndreikosen@gmail.com',
     license='GNU GPLv3',
     packages=['email_listener'],
     install_requires=[
+        'datetime',
         'email',
         'html2text',
         'imapclient',
         'os',
-        'datetime',
+        'pytest',
+        'time',
     ],
     zip_safe=False)
 
