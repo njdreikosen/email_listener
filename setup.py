@@ -5,13 +5,13 @@ with open("README.md", "r") as fh:
 
 setup(
     name='email_listener',
-    version='0.1',
+    version='0.3',
     description='Listen in an email folder and process incoming emails.',
     long_description=long_description,
-    long_description_content_type=text/markdown,
+    long_description_content_type="text/markdown",
     classifiers=[
         'Development Status :: 3 - Alpha',
-        'License :: OSI Approved :: GNU General Public License v3',
+        'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
         'Programming Language :: Python :: 3.7',
         'Topic :: Communications :: Email',
     ],
@@ -25,9 +25,7 @@ setup(
         'email',
         'html2text',
         'imapclient',
-        'os',
         'pytest',
-        'time',
     ],
     zip_safe=False)
 
