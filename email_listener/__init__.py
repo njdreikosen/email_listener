@@ -1,16 +1,66 @@
-"""email_listener: Listen in an email folder and process incoming emails."""
+"""email_listener: Listen in an email folder and process incoming emails.
+
+Example:
+
+    # Create the listener
+    listener = EmailListener("example@email.com", "badpassword", "Inbox", "./files/")
+    # Log the listener into the IMAP server
+    listener.login()
+    # Scrape emails from the folder without moving them
+    listener.scrape()
+    # Scrape emails from the folder, and move them to the "email_listener" folder
+    listener.scrape("email_listener")
+    # Listen in the folder for 5 minutes, without moving the emails, and not
+    # calling any process function on the emails.
+    listener.listen(5)
+    # Listen in the folder until 1:30pm, moving each new email to the "email_listener"
+    # folder, and calling the processing function 'send_reply()'
+    listener.listen([13, 30], "email_listener", send_reply)
+    # Log the listener out of the IMAP server
+    listener.logout()
+
+"""
+
+# Imports from other packages
 import email
 import html2text
 from imapclient import IMAPClient, SEEN
 import os
-
+# Imports from this package
 from .helpers import (
     calc_timeout,
     get_time,
 )
 
+
 class EmailListener:
+    """EmailListener object for listening to an email folder and processing emails.
+
+    Attributes:
+        email (str): The email to listen to.
+        app_password (str): The password for the email.
+        folder (str): The email folder to listen in.
+        attachment_dir (str): The file path to the folder to save scraped
+            emails and attachments to.
+        server (IMAPClient): The IMAP server to log into. Defaults to None.
+
+    """
+
     def __init__(self, email, app_password, folder, attachment_dir):
+        """Initialize an EmailListener instance.
+
+        Args:
+            email (str): The email to listen to.
+            app_password (str): The password for the email.
+            folder (str): The email folder to listen in.
+            attachment_dir (str): The file path to folder to save scraped
+                emails and attachments to.
+
+        Returns:
+            None
+
+        """
+
         self.email = email
         self.app_password = app_password
         self.folder = folder
@@ -19,17 +69,47 @@ class EmailListener:
 
 
     def login(self):
+        """Logs in the EmailListener to the IMAP server.
+
+        Args:
+            None
+
+        Returns:
+            None
+
+        """
+
         self.server = IMAPClient('imap.gmail.com')
         self.server.login(self.email, self.app_password)
         self.server.select_folder(self.folder, readonly=False)
 
 
     def logout(self):
+        """Logs out the EmailListener from the IMAP server.
+
+        Args:
+            None
+
+        Returns:
+            None
+
+        """
+
         self.server.logout()
         self.server = None
 
 
-    def scrape(self, move):
+    def scrape(self, move=None):
+        """Scrape unread emails from the current folder.
+
+        Args:
+            move (str): The folder to move scraped emails to. Defaults to None.
+
+        Returns:
+            A list of the file paths to each scraped email.
+
+        """
+
         # List containing the file paths of each file created for an email message
         msg_list = []
 
@@ -136,13 +216,31 @@ class EmailListener:
                 except:
                     # Create the folder and move the message to the folder
                     self.server.create_folder(move)
-                    server.move(uid, move)
+                    self.server.move(uid, move)
             else:
                 self.server.remove_flags(uid, [SEEN])
         return msg_list
 
 
-    def listen(self, timeout, move=None, process_func=None) -> None:
+    def listen(self, timeout, move=None, process_func=None):
+        """Listen in an email folder for incoming emails, and process them.
+
+        Args:
+            timeout (int or list): Either an integer representing the number
+                of minutes to timeout in, or a list, formatted as [hour, minute]
+                of the local time to timeout at.
+            move (str): The name of the folder to move processed emails to. If
+                None, the emails are not moved or marked as read. Defaults to
+                None.
+            process_func (function): A function called to further process the
+                emails. The function must take only the list of file paths
+                returned by the scrape function as an argument. Defaults to None.
+
+        Returns:
+            None
+
+        """
+
         # Ensure server is connected
         if type(self.server) is not IMAPClient:
             raise ValueError("server attribute must be type IMAPClient")
@@ -176,6 +274,4 @@ class EmailListener:
             # Stop idling
             self.server.idle_done()
         return
-
-
 

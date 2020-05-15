@@ -1,16 +1,16 @@
-""" """
+"""Test suit for EmailListener class."""
+
+# Imports from other packages
 from imapclient import IMAPClient, SEEN
 import os
 import pytest
-
+# Imports from this package
 from email_listener import EmailListener
 
 
 @pytest.fixture
 def email_listener():
-    """
-    Returns an EmailListener instance with email and password taken from env
-    """
+    """Returns an EmailListener instance with email and password taken from env."""
 
     # Email and password are read from environment variables
     email = os.environ['EL_EMAIL']
@@ -24,7 +24,8 @@ def email_listener():
 
 
 def test_init():
-    """ """
+    """Test that the EmailListener is initialized as expected."""
+
     # Create an example email listener object
     el = EmailListener("example@email.com", "badpassword", "Inbox", "/fake/path")
     # Check that all the values are initialized correctly
@@ -34,31 +35,40 @@ def test_init():
     check4 = (el.attachment_dir == "/fake/path")
     check5 = (el.server is None)
 
+    # Check that all the initialized values are correct
     assert check1 and check2 and check3 and check4 and check5
 
 
 def test_login(email_listener):
-    """ """
+    """Test the login function."""
+
     # Get an imap connection
     email_listener.login()
+    check = type(email_listener.server)
+    email_listener.logout()
 
-    assert type(email_listener.server) is IMAPClient
+    # Check that the server is initialized
+    assert check is IMAPClient
 
 
 def test_logout(email_listener):
-    """ """
+    """Test the logout function."""
+
     # Get an imap connection
     email_listener.login()
 
     # Logout of the connection
     email_listener.logout()
 
+    # Check that the sserver is no longer initialized
     assert email_listener.server is None
 
 
 def test_scrape_no_move(email_listener):
-    """
+    """Test the scrape function when move is None.
+
     Currently has an attachment email, an html email, and a non-multipart email.
+
     """
 
     # Login
@@ -112,6 +122,8 @@ def test_scrape_no_move(email_listener):
 
 
 def test_scrape_move(email_listener):
+    """Test the scrape function with move set to another folder."""
+
     # Login
     email_listener.login()
 

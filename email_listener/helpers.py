@@ -1,10 +1,32 @@
-""" Helper functions for email_listener. """
+"""Helper functions for email_listener.
+
+Examples:
+
+    # Calculate the timeout in 5 minutes
+    timeout = calc_timeout(5)
+
+    # Calculate the timeout to be at 1:30pm
+    timeout = calc_timeout([13, 30])
+
+    # Get the current time for timeout comparison
+    time = get_time()
+
+"""
+
 import datetime
 
 
-def calc_timeout(timeout) -> float:
-    """
-    Calculate the time when a timeout should occur in seconds since epoch
+def calc_timeout(timeout):
+    """Calculate the time when a timeout should occur in seconds since epoch.
+
+    Args:
+        timeout (int or list): Either an integer representing the number of
+            minutes to timeout in, or a list, formatted as [hour, minute] of
+            the local time to timeout at.
+
+    Returns:
+        The timeout time in number of sections since epoch.
+
     """
 
     # Get datetime object for the current time
@@ -41,9 +63,15 @@ def calc_timeout(timeout) -> float:
     return t_out
 
 
-def get_time() -> float:
-    """
-    Get the current time in seconds since epoch
+def get_time():
+    """Get the current time in seconds since epoch.
+
+    Args:
+        None
+
+    Returns:
+        The current time in seconds since epoch.
+
     """
 
     return datetime.datetime.now().timestamp()
