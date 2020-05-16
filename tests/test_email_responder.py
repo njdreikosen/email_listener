@@ -153,7 +153,7 @@ def test_send_singlepart_msg(email_responder, email_listener):
 #    # Login the email listener
 #    email_listener.login()
 #    # Check that the email is there
-#    msg_list = email_listener.scrape("Trash")
+#    msg_list = email_listener.scrape()
 #    print(msg_list)
 #    check1 = (len(msg_list) == 1)
 #    # Open the file, and ensure it contains what we sent
@@ -167,6 +167,14 @@ def test_send_singlepart_msg(email_responder, email_listener):
 #    if os.path.exists(msg_list[0]):
 #        print("ERROR: FILE EXISTS")
 #        check3 = False
+#
+#    # Move the email to the trash
+#    messages = email_listener.server.search("UNSEEN")
+#    for uid, message_data in email_listener.server.fetch(messages, 'RFC822').items():
+#        email_listener.server.set_gmail_labels(uid, "\\Trash")
+#
+#    # Log out the email listener
+#    email_listener.logout()
 #
 #    # Check that there is only 1 new email, that it only has one line, and that
 #    # that line contains the message.

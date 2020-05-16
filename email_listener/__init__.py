@@ -147,8 +147,8 @@ class EmailListener:
                     if part.get_content_maintype() == 'multipart':
                         continue
                     # If the header says the part type is None, pass
-                    if part.get('Content-Disposition') is None:
-                        continue
+                    #if part.get('Content-Disposition') is None:
+                    #    continue
 
                     # If the part is html text
                     if part.get_content_type() == 'text/html':
