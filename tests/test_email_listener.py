@@ -6,6 +6,7 @@ import os
 import pytest
 # Imports from this package
 from email_listener import EmailListener
+from email_listener.email_responder import EmailResponder
 
 
 @pytest.fixture
@@ -21,6 +22,95 @@ def email_listener():
     attachment_dir = os.environ['EL_FOLDER']
 
     return EmailListener(email, app_password, folder, attachment_dir)
+
+
+@pytest.fixture
+def singlepart_email():
+    """Send a singlepart test email with only plain text."""
+
+    # Create an email responder
+    email = os.environ['EL_EMAIL']
+    app_password = os.environ['EL_APW']
+    email_responder = EmailResponder(email, app_password)
+    email_responder.login()
+
+    # Set the recipient as this email, in the email_listener folder
+    recipient_parts = email_responder.email.split('@')
+    recipient = "{}+email_listener@{}".format(recipient_parts[0], recipient_parts[1])
+
+    # Create the test email
+    subject = "EmailListener Test"
+    text = "This is the plain text message.\nThis is another line.\n"
+    # Send the message
+    email_responder.send_singlepart_msg(recipient, subject, text)
+    email_responder.logout()
+
+    # Run the other fixtures and test
+    yield
+
+
+@pytest.fixture
+def multipart_email():
+    """Send a MIME Multipart test email with plain text, html, and attachment elements."""
+
+    # Create an email responder and login
+    email = os.environ['EL_EMAIL']
+    app_password = os.environ['EL_APW']
+    email_responder = EmailResponder(email, app_password)
+    email_responder.login()
+
+    # Set the recipient as this email, in the email_listener folder
+    recipient_parts = email_responder.email.split('@')
+    recipient = "{}+email_listener@{}".format(recipient_parts[0], recipient_parts[1])
+
+    # Create the test email
+    subject = "EmailListener Test"
+    # Create the plain text message
+    text = "This is the plain text message.\nThis is another line.\n"
+    # Create the HTML message
+    html = ('<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" '
+            '"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">\n'
+            '<html xmlns="http://www.w3.org/1999/xhtml">\n'
+            '  <head>\n'
+            '    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />'
+            '\n'
+            '    <title>EmailListener Test</title>\n'
+            '    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>'
+            '\n'
+            '  </head>\n'
+            '  <body>\n'
+            '    <p>This is the HTML message.<br/>This is another line.<br/></p>\n'
+            '  </body>\n'
+            '</html>')
+    attachments = [os.path.join(os.path.dirname(os.path.abspath(__file__)),
+            "EmailListener_test.txt")]
+    email_responder.send_multipart_msg(recipient, subject, text, html=html,
+            attachments=attachments)
+    email_responder.logout()
+
+    # Run the other fixtures and test
+    yield email_listener
+
+
+@pytest.fixture
+def cleanup():
+    """EmailListener test suite teardown, moves the test email to the Trash."""
+
+    # Let the other fixtures and the test run
+    yield
+
+    # Create an email listener
+    email = os.environ['EL_EMAIL']
+    app_password = os.environ['EL_APW']
+    server = IMAPClient('imap.gmail.com')
+    server.login(email, app_password)
+    server.select_folder("email_listener", readonly=False)
+    messages = server.search("UNSEEN")
+    for uid, message_data in server.fetch(messages, 'RFC822').items():
+        print("uid: {}".format(uid))
+        server.set_gmail_labels(uid, "\\Trash")
+    server.logout()
+
 
 
 def test_init():
@@ -64,117 +154,191 @@ def test_logout(email_listener):
     assert email_listener.server is None
 
 
-def test_scrape_no_move(email_listener):
-    """Test the scrape function when move is None.
-
-    Currently has an attachment email, an html email, and a non-multipart email.
-
-    """
+def test_scrape_singlepart(email_listener, singlepart_email, cleanup):
+    """Test the scraping functionality of scrape() for singlepart emails."""
 
     # Login
     email_listener.login()
 
     # Scrape the emails, but don't move them
-    msg_list = email_listener.scrape(None) 
+    messages = email_listener.scrape()
 
-    # Open each file and ensure it has the correct content (same for each email)
-    check2 = []
-    for i in range(len(msg_list)):
-        # Open the file for reading
-        fp = open(msg_list[i], 'r')
-        # Read it
-        msg = fp.readlines()
-        # Check that each line contains what it should (minus extra whitespace)
-        line1 = (msg[0].strip() == "This is a test message.")
-        line2 = (msg[1].strip() == "This is another line.")
-        check2.append(line1 and line2)
-        # Close the file
-        fp.close()
-        # Delete the file
-        os.remove(msg_list[i])
-        # If the file wasn't removed for some reason, fail
-        if os.path.exists(msg_list[i]):
-            print("ERROR: FILE EXISTS")
-            check2[i] = False
-
-    # Scrape again, and ensure the same files are returned, indicating they
-    # weren't moved
-    check3 = []
-    msg_list2 = email_listener.scrape(None)
-    # If the same filenames are in the list, it is the same emails, since
-    # the filename is built from the sender and the email id
-    for i in range(len(msg_list2)):
-        if msg_list2[i] in msg_list:
-            check3.append(True)
+    # Go through each return message and make sure they contain what they should
+    checks = []
+    for key in messages.keys():
+        # Test the plain text message
+        plain_text = messages[key].get("Plain_Text")
+        if plain_text is None:
+            checks.append( bool(plain_text is not None) )
         else:
-            check3.append(False)
-        # Delete the file
-        os.remove(msg_list2[i])
+            # Split the message up by lines, and remove extra whitespace
+            plain_text = plain_text.strip().splitlines()
+            # There will be two lines if the message isn't blank
+            if len(plain_text) == 2:
+                checks.append((plain_text[0].strip() == "This is the plain text message.")
+                        and (plain_text[1].strip() == "This is another line."))
+            else:
+                checks.append( bool(len(plain_text) == 2) )
+
+        # Make sure there is no html or attachments
+        plain_html = messages[key].get("Plain_HTML")
+        html = messages[key].get("HTML")
+        attachments = messages[key].get("attachments")
+        checks.append( (plain_html is None) and (html is None) and (attachments is None) )
+
+    # Check for the messages again, which should now be seen
+    seen = email_listener.server.search("SEEN")
+    # Move emails back to original folder
+    for uid, message_data in email_listener.server.fetch(seen, 'RFC822').items():
+        email_listener.server.remove_flags(uid, [SEEN])
 
     # Logout
     email_listener.logout()
 
-    # Check that the correct number of emails is found, that each file contains
-    # what it is supposed to, and that the files aren't moved and can be scraped
-    # by making sure every item in the second list is in the first, and that the
-    # second list is not empty
-    assert (len(msg_list) == 3) and all(check2) and all(check3) and bool(msg_list2)
+    # Check that the correct number of emails is found, each section
+    # contains what it should, each of the emails is marked as seen, and
+    # are still in the same folder.
+    assert (len(messages) == 1) and all(checks) and (len(seen) == 1)
 
 
-def test_scrape_move(email_listener):
-    """Test the scrape function with move set to another folder."""
+
+def test_scrape_multipart(email_listener, multipart_email, cleanup):
+    """Test the scraping functionality of scrape() for multipart emails."""
 
     # Login
     email_listener.login()
 
     # Scrape the emails, but don't move them
-    msg_list = email_listener.scrape("email_listener2")
+    messages = email_listener.scrape()
 
-    # Open each file and ensure it has the correct content (same for each email)
-    check2 = []
-    for i in range(len(msg_list)):
-        # Open the file for reading
-        fp = open(msg_list[i], 'r')
-        # Read it
-        msg = fp.readlines()
-        # Check that each line contains what it should (minus extra whitespace)
-        line1 = (msg[0].strip() == "This is a test message.")
-        line2 = (msg[1].strip() == "This is another line.")
-        check2.append(line1 and line2)
-        # Close the file
-        fp.close()
-        # Delete the file
-        os.remove(msg_list[i])
-        # If the file wasn't removed for some reason, fail
-        if os.path.exists(msg_list[i]):
-            print("ERROR: FILE EXISTS")
-            check2[i] = False
+    # Go through each return message and make sure they contain what they should
+    checks = []
+    for key in messages.keys():
+        # Test the plain text message
+        plain_text = messages[key].get("Plain_Text")
+        if plain_text is None:
+            checks.append( bool(plain_text is not None) )
+        else:
+            # Split the message up by lines, and remove extra whitespace
+            plain_text = plain_text.strip().splitlines()
+            # There will be two lines if the message isn't blank
+            if len(plain_text) == 2:
+                checks.append((plain_text[0].strip() == "This is the plain text message.")
+                        and (plain_text[1].strip() == "This is another line."))
+            else:
+                checks.append( bool(len(plain_text) == 2) )
 
-    # Scrape again, and ensure the same files are returned, indicating they
-    # weren't moved
-    check3 = []
-    msg_list2 = email_listener.scrape(None)
-    # Delete any files that may have been created
-    for i in range(len(msg_list2)):
-        os.remove(msg_list2[i])
+        # Test the plain text version of the html message
+        plain_html = messages[key].get("Plain_HTML")
+        if plain_html is None:
+            checks.append( bool(plain_html is not None) )
+        else:
+            # Split the message up by lines, and remove extra whitespace
+            plain_html = plain_html.strip().splitlines()
+            html = messages[key].get("HTML")
+            # There will be two lines if the message isn't blank
+            if len(plain_html) == 2:
+                checks.append((plain_html[0].strip() == "This is the HTML message.")
+                        and (plain_html[1].strip() == "This is another line."))
+            else:
+                checks.append( bool(len(plain_html) == 2) )
+
+        # Test the pure html message
+        html = messages[key].get("HTML")
+        if html is None:
+            checks.append( bool(html is not None) )
+        else:
+            test_html = ('<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" '
+                    '"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">\n'
+                    '<html xmlns="http://www.w3.org/1999/xhtml">\n'
+                    '  <head>\n'
+                    '    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />'
+                    '\n'
+                    '    <title>EmailListener Test</title>\n'
+                    '    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>'
+                    '\n'
+                    '  </head>\n'
+                    '  <body>\n'
+                    '    <p>This is the HTML message.<br/>This is another line.<br/></p>\n'
+                    '  </body>\n'
+                    '</html>')
+            # Split the html up by line for comparison
+            html_lines = html.splitlines()
+            test_html_lines = html.splitlines()
+            # Go through the html line by line and compare
+            if (len(html_lines) == len(test_html_lines)):
+                for i in range(len(html_lines)):
+                    checks.append( html_lines[i].strip() == test_html_lines[i].strip() )
+            else:
+                checks.append( len(html_lines) == len(test_html_lines) )
+
+        # Test any attachments
+        attachments = messages[key].get("attachments")
+        if attachments is None:
+            checks.append( bool(attachments is not None) )
+        else:
+            if len(attachments) == 1:
+                # If there is a file, open it and check the contents
+                if os.path.exists(attachments[0]):
+                    with open(attachments[0], 'r') as file:
+                        msg = file.readlines()
+                        checks.append((msg[0].strip() == "This is the attachment message.")
+                                and (msg[1].strip() == "This is another line."))
+                    # Delete the attachment
+                    os.remove(attachments[0])
+                # If the file doesn't exist, fail
+                else:
+                    checks.append( bool(os.path.exists(attachments)) )
+            else:
+                checks.append( bool(len(attachments) == 1) )
+
+    # Check for the messages again, which should now be seen
+    seen = email_listener.server.search("SEEN")
+    # Move emails back to original folder
+    for uid, message_data in email_listener.server.fetch(seen, 'RFC822').items():
+        email_listener.server.remove_flags(uid, [SEEN])
+
+    # Logout
+    email_listener.logout()
+
+    # Check that the correct number of emails is found, each section
+    # contains what it should, each of the emails is marked as seen, and are
+    # still in the same folder.
+    assert (len(messages) == 1) and all(checks) and (len(seen) == 1)
+
+
+def test_scrape_options(email_listener, singlepart_email, cleanup):
+    """Test the optional inputs for the scrape function."""
+
+    # Login
+    email_listener.login()
+
+    # Scrape the emails, moving them to a new folder, and removing the 'seen' flag
+    messages = email_listener.scrape(move="email_listener2", unread=True)
 
     # Switch folders
     email_listener.server.select_folder("email_listener2", readonly=False)
-    # Search the new folder for seen messages (should be the previous messages)
-    messages = email_listener.server.search("SEEN")
-    
-    # Move emails back to original folder
-    for uid, message_data in email_listener.server.fetch(messages, 'RFC822').items():
-        email_listener.server.remove_flags(uid, [SEEN])
-        email_listener.server.move(uid, "email_listener")
+    # Scrape again, this time deleting the emails
+    messages2 = email_listener.scrape(delete=True)
+
+    # Ensure the emails were deleted
+    messages3 = email_listener.scrape(unread=True)
 
     # Logout
     email_listener.logout()
 
-    # Check that the correct number of emails is found, that each file contains
-    # what it is supposed to, and that the files are moved to 'email_listener2',
-    # and that the files are marked
-    assert (len(msg_list) == 3) and all(check2) and not bool(msg_list2) and (len(messages) == 3)
+    # Delete the downloaded attachment
+    for key in messages.keys():
+        attachments = messages[key].get("attachments")
+        if attachments is not None:
+            for attachment in attachments:
+                if os.path.exists(attachment):
+                    os.remove(attachment)
+
+    # Check that the correct number of emails is found, that each of the emails
+    # is found in the new folder not marked as seen, and that each of the emails
+    # was deleted.
+    assert (len(messages) == 1) and (len(messages2) == 1) and (len(messages3) == 0)
 
 
 #def test_listen_no_process(email_listener):

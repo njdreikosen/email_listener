@@ -99,7 +99,7 @@ class EmailListener:
         self.server = None
 
 
-    def scrape(self, move=None):
+    def scrape(self, move=None, unread=False, delete=False):
         """Scrape unread emails from the current folder.
 
         Args:
@@ -111,7 +111,7 @@ class EmailListener:
         """
 
         # List containing the file paths of each file created for an email message
-        msg_list = []
+        msg_dict = {}
 
         # Search for unseen messages
         messages = self.server.search("UNSEEN")
@@ -129,15 +129,16 @@ class EmailListener:
             else:
                 user = "UnknownEmail"
 
+            # Generate the dict key for this email
+            key = "{}_{}".format(uid, user)
+            # Generate the value dictionary to be filled later
+            val_dict = {}
+
             # Display notice
             print("PROCESSING: Email UID = {} from {}".format(uid, user))
 
-            # Base file name
-            file_base = "{}_{}_".format(user, uid)
-            # Count for number of files created, used to help name files
-            file_count = 0
-            # File extension
-            file_ext = "txt"
+            # Counter for emails with multiple attachments
+            attachment_counter = 0
 
             # If the email has multiple parts
             if email_message.is_multipart():
@@ -146,70 +147,59 @@ class EmailListener:
                     # If the part is multipart, pass
                     if part.get_content_maintype() == 'multipart':
                         continue
-                    # If the header says the part type is None, pass
-                    #if part.get('Content-Disposition') is None:
-                    #    continue
+
+                    # If the part is an attachment
+                    file_name = part.get_filename()
+                    if bool(file_name):
+                        # Generate file path
+                        file_path = os.path.join(self.attachment_dir, file_name)
+                        with open(file_path, 'wb') as file:
+                            file.write(part.get_payload(decode=True))
+                        attachment_list = val_dict.get("attachments")
+                        if attachment_list is None:
+                            val_dict["attachments"] = ["{}".format(file_path)]
+                        else:
+                            attachment_list.append("{}".format(file_path))
+                            val_dict["attachments"] = attachment_list
 
                     # If the part is html text
-                    if part.get_content_type() == 'text/html':
-                        print("{} is HTML".format(uid))
+                    elif part.get_content_type() == 'text/html':
                         # Convert the body from html to plain text
-                        body = html2text.html2text(part.get_payload())
-                        # Set the access mode as write to text file
-                        access_mode = 'w'
+                        val_dict["Plain_HTML"] = html2text.html2text(
+                                part.get_payload())
+                        val_dict["HTML"] = part.get_payload()
+
                     # If the part is plain text
                     elif part.get_content_type() == 'text/plain':
-                        print("{} is PLAIN".format(uid))
                         # Get the body
-                        body = part.get_payload()
-                        # Set the access mode as write to text file
-                        access_mode = 'w'
-                    
-                    else:
-                        continue
+                        val_dict["Plain_Text"] = part.get_payload()
+
                     # If the part is an attachment
-                    if bool(part.get_filename()):
-                        print("{} is FILE".format(uid))
-                        # Get the body
-                        body = part.get_payload(decode=True)
-                        # Get the file extension
-                        file_ext = part.get_filename().split('.')[-1]
-                        # Set the access mode as write to binary file
-                        access_mode = 'wb'
-
-                    # File path name, to be filled below
-                    file_path = ""
-
-                    # Create the file path and check that it doesn't exist
-                    # If it does, increment file_count and try again
-                    while (file_path == "" or os.path.isfile(file_path)):
-                        file_name = "{}{}.{}".format(file_base, file_count, file_ext)
-                        file_path = os.path.join(self.attachment_dir, file_name)
-                        file_count += 1
-
-                    # Open the file, write to it, then close it
-                    fp = open(file_path, access_mode)
-                    fp.write(body)
-                    fp.close()
-                    msg_list.append(file_path)
+                    #file_name = part.get_filename()
+                    #if bool(file_name):
+                    #    # Generate file path
+                    #    file_path = os.path.join(self.attachment_dir, file_name)
+                    #    with open(file_path, 'wb') as file:
+                    #        file.write(part.get_payload(decode=True))
+                    #    attachment_list = val_dict.get("attachments")
+                    #    if attachment_list is None:
+                    #        val_dict["attachments"] = ["{}".format(file_path)]
+                    #    else:
+                    #        attachment_list.append("{}".format(file_path))
+                    #        val_dict["attachments"] = attachment_list
 
             # If the message isn't multipart
             else:
-                # Get the body
-                #body = email_message.as_bytes().decode(encoding='UTF-8')
-                body = email_message.get_payload()
-                # Create the file path
-                file_name = "{}.{}".format(file_base, file_ext)
-                file_path = os.path.join(self.attachment_dir, file_name)
-                # Open the file and write to it
-                fp = open(file_path, 'w')
-                fp.write(body)
-                fp.close()
-                msg_list.append(file_path)
+                val_dict["Plain_Text"] = email_message.get_payload()
+
+            msg_dict[key] = val_dict
+
+            # If the message should be marked as unread
+            if bool(unread):
+                self.server.remove_flags(uid, [SEEN])
 
             # If a move folder is specified
             if move is not None:
-                self.server.add_flags(uid, [SEEN])
                 try:
                     # Move the message to another folder
                     self.server.move(uid, move)
@@ -217,12 +207,14 @@ class EmailListener:
                     # Create the folder and move the message to the folder
                     self.server.create_folder(move)
                     self.server.move(uid, move)
-            else:
-                self.server.remove_flags(uid, [SEEN])
-        return msg_list
+            elif bool(delete):
+                # Add delete statement
+                self.server.set_gmail_labels(uid, "\\Trash")
+
+        return msg_dict
 
 
-    def listen(self, timeout, move=None, process_func=None):
+    def listen(self, timeout, process_func=None, moves=None, unread=False, delete=False):
         """Listen in an email folder for incoming emails, and process them.
 
         Args:
@@ -265,10 +257,10 @@ class EmailListener:
                     # Suspend the idling
                     self.server.idle_done()
                     # Process the new emails
-                    msg_files = self.scrape(move)
+                    msgs = self.scrape(move=move, unread=unread, delete=delete)
                     # If a process function is passed in
                     if type(process_func) is 'function':
-                        process_func(msg_files)
+                        process_func(msgs)
                     # Restart idling
                     self.server.idle()
             # Stop idling

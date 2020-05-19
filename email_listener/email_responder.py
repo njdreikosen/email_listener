@@ -39,6 +39,7 @@ Example:
 
 # Imports from other packages
 import os
+from email.mime.application import MIMEApplication
 from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -161,16 +162,18 @@ class EmailResponder:
                 msg_html.attach(MIMEText(html, "html"))
 
                 # If there are images, include them
+                if images is None:
+                    images = []
                 for i in range(len(images)):
                     # Open the image, read it, and name it so that it can be
                     # referenced by name in the html as:
                     # <img src="cid:image[i]">
                     # where [i] is the index of the image in images
                     with open(images[i], 'rb') as fp:
-                        img = MIMEImage(fp.read())
+                        img = MIMEImage(fp.read(), _subtype="png")
                         img.add_header('Content-ID', "<image{}>".format(i))
                     # Attach the image to the html part
-                    msg_html.attach(img_data)
+                    msg_html.attach(img)
 
                 # Attach the html section to the alternative section
                 msg_body.attach(msg_html)
