@@ -89,7 +89,7 @@ def multipart_email():
     email_responder.logout()
 
     # Run the other fixtures and test
-    yield email_listener
+    yield
 
 
 @pytest.fixture
@@ -111,6 +111,11 @@ def cleanup():
         server.set_gmail_labels(uid, "\\Trash")
     server.logout()
 
+    # Delete any downloaded attachments
+    download_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "attachments")
+    for file in os.listdir(download_dir):
+        full_path = os.path.join(download_dir, file)
+        os.remove(full_path)
 
 
 def test_init():
