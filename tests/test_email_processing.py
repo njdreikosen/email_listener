@@ -24,7 +24,8 @@ def email_listener():
     # Read from the folder 'email_listener'
     folder = "email_listener"
     # Save attachments to a dir saved in env
-    attachment_dir = os.environ['EL_FOLDER']
+    attachment_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+            "attachments")
 
     return EmailListener(email, app_password, folder, attachment_dir)
 
