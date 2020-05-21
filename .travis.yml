@@ -1,7 +1,12 @@
 language: python
 python:
 - '3.7'
-script: pytest
+script:
+- pytest --cov=./
+install:
+- pip install -r requirements.txt
+after_success:
+- bash <(curl -s https://codecov.io/bash)
 env:
   global:
   - secure: IRllGdKlMKDm8dxlSGxJPZ2xn0Jp328s+XIAyY3rvND6ipDQsVpMBAKhBdBIeL8DPgRtC9MYELkh1KbbitlI1mB6nmZgR6wGcU2zVBWts2AZ78auHSSIH60QIIXz3CYrAR+tozW0kfN+NgVuUQH5kPe0KL8rvrRuqk5wBH3CBdhgJFKspF79Umg2mwoKeLdNh4RUiPW3BZ6elY0PEkfvd37HhJhZXRDJWfFBUowl/s1d4kXVsE0xh2c40kQkANAys9ew82mAVysPhSp5I4Rwp2aPsmDeIq05msFXJv7O1WEYTIU2NANSbGNPkoE+MwSGRH5QhmBvRnta1cEBaNLTLgN4KrwrDnOaT9ckqQ3fUXNQC8deDRaH3f6yzTo7vExJyDVyRQt+XlHHk7EBe2pSPWWXtthsDJ/1UD7r0CeeU9CLFr1uEB6kDgJ266HQVsNEPsqwIk1N2ovv+GfrcHFv0UHrJ/uMONFUOAcwTp4XDVCwVTwLpMBmVIlatasnP6If07dS1C+Jj+B4f6Caa47LhrB/xbzFVvHXAGyhOG9DPg5Oq+52z61Y8jpmGb9kVTTGHnZjodMAKJjpgZNb2OPJTdps41/+PqDPHsXtQYNLaAxxBtKAfKPIsFy4j/t4OpQwnDQ9pFnpuqqLP12w4ktSRZdtPuoL0ZIOejWWxuJCdQ0=
