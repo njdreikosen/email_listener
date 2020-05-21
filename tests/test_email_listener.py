@@ -219,6 +219,11 @@ def test_scrape_singlepart(email_listener, singlepart_email, cleanup):
 def test_scrape_multipart(email_listener, multipart_email, cleanup):
     """Test the scraping functionality of scrape() for multipart emails."""
 
+    mydir = os.path.dirname(os.path.realpath(__file__))
+    print(mydir)
+    for file in os.listdir(mydir):
+        print(file)
+
     # Login
     email_listener.login()
 
