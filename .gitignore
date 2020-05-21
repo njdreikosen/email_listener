@@ -21,8 +21,4 @@ wheels/
 *.egg-info
 *.egg
 
-# Extras
-experiment*
-*TODO.txt
-*.swp
 

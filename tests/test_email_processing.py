@@ -257,8 +257,9 @@ def test_write_to_file(email_listener, multipart_email):
 
     # Delete any downloaded attachments
     download_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "attachments")
-    if os.path.exists(download_dir):
-        for file in os.listdir(download_dir):
+    for file in os.listdir(download_dir):
+        file_ext = file.split('.')[-1]
+        if (file_ext == "txt"):
             full_path = os.path.join(download_dir, file)
             os.remove(full_path)
 
