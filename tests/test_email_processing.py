@@ -257,9 +257,10 @@ def test_write_to_file(email_listener, multipart_email):
 
     # Delete any downloaded attachments
     download_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "attachments")
-    for file in os.listdir(download_dir):
-        full_path = os.path.join(download_dir, file)
-        os.remove(full_path)
+    if os.path.exists(download_dir):
+        for file in os.listdir(download_dir):
+            full_path = os.path.join(download_dir, file)
+            os.remove(full_path)
 
     # Check that there is only 1 new email, that it only has one line, and that
     # that line contains the message.

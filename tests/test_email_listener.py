@@ -114,9 +114,10 @@ def cleanup():
 
     # Delete any downloaded attachments
     download_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "attachments")
-    for file in os.listdir(download_dir):
-        full_path = os.path.join(download_dir, file)
-        os.remove(full_path)
+    if os.path.exists(download_dir):
+        for file in os.listdir(download_dir):
+            full_path = os.path.join(download_dir, file)
+            os.remove(full_path)
 
 
 def test_init():
