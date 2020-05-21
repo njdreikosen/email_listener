@@ -45,7 +45,7 @@ def multipart_email():
     recipient = "{}+email_listener@{}".format(recipient_parts[0], recipient_parts[1])
 
     # Create the test email
-    subject = "EmailListener Test"
+    subject = "Email Processing Test"
     # Create the plain text message
     text = "This is the plain text message.\nThis is another line.\n"
     # Create the HTML message
@@ -112,6 +112,25 @@ def test_write_to_file(email_listener, multipart_email):
                 # If the line is empty, go to the next one
                 if (line == ""):
                     index += 1
+
+                elif (line == "Subject"):
+                    # For saving lines to be tested
+                    test_arr = []
+                    index += 1
+                    while (index < len(lines)):
+                        line = lines[index].strip()
+                        if ( (line == "Plain_Text") or (line == "Plain_HTML")
+                                or (line == "HTML") or (line == "attachments") ):
+                            break
+                        if (line != ""):
+                            test_arr.append(line)
+                        # Go to the next line
+                        index += 1
+                    # Check that the test array contains what it should
+                    if (len(test_arr) != 1):
+                        subject_check = (len(test_arr) == 1)
+                    else:
+                        subject_check = (test_arr[0] == "Email Processing Test")
 
                 # If the line is the plain text section header
                 elif(line == "Plain_Text"):
@@ -244,5 +263,5 @@ def test_write_to_file(email_listener, multipart_email):
 
     # Check that there is only 1 new email, that it only has one line, and that
     # that line contains the message.
-    assert plain_text_check and plain_html_check and html_check and attachments_check
+    assert subject_check and plain_text_check and plain_html_check and html_check and attachments_check
 

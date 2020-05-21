@@ -172,6 +172,13 @@ def test_scrape_singlepart(email_listener, singlepart_email, cleanup):
     # Go through each return message and make sure they contain what they should
     checks = []
     for key in messages.keys():
+        # Test the subject
+        subject = messages[key].get("Subject")
+        if subject is None:
+            checks.append( bool(subject is not None) )
+        else:
+            checks.append(subject.strip() == "EmailListener Test")
+
         # Test the plain text message
         plain_text = messages[key].get("Plain_Text")
         if plain_text is None:
@@ -220,6 +227,13 @@ def test_scrape_multipart(email_listener, multipart_email, cleanup):
     # Go through each return message and make sure they contain what they should
     checks = []
     for key in messages.keys():
+        # Test the subject
+        subject = messages[key].get("Subject")
+        if subject is None:
+            checks.append( bool(subject is not None) )
+        else:
+            checks.append(subject.strip() == "EmailListener Test")
+
         # Test the plain text message
         plain_text = messages[key].get("Plain_Text")
         if plain_text is None:

@@ -137,8 +137,8 @@ class EmailListener:
             # Display notice
             print("PROCESSING: Email UID = {} from {}".format(uid, user))
 
-            # Counter for emails with multiple attachments
-            attachment_counter = 0
+            # Add the subject
+            val_dict["Subject"] = email_message.get('Subject').strip()
 
             # If the email has multiple parts
             if email_message.is_multipart():
@@ -173,20 +173,6 @@ class EmailListener:
                     elif part.get_content_type() == 'text/plain':
                         # Get the body
                         val_dict["Plain_Text"] = part.get_payload()
-
-                    # If the part is an attachment
-                    #file_name = part.get_filename()
-                    #if bool(file_name):
-                    #    # Generate file path
-                    #    file_path = os.path.join(self.attachment_dir, file_name)
-                    #    with open(file_path, 'wb') as file:
-                    #        file.write(part.get_payload(decode=True))
-                    #    attachment_list = val_dict.get("attachments")
-                    #    if attachment_list is None:
-                    #        val_dict["attachments"] = ["{}".format(file_path)]
-                    #    else:
-                    #        attachment_list.append("{}".format(file_path))
-                    #        val_dict["attachments"] = attachment_list
 
             # If the message isn't multipart
             else:

@@ -27,9 +27,15 @@ def write_to_file(email_listener, msg_dict):
 
         # Open the file
         with open(file_path, "w+") as file:
+            # Write the subject to the file
+            file.write("Subject\n\n{}\n\n\n".format(msg_dict[key].get("Subject")))
             # Write each section to the file
             for key2 in msg_dict[key].keys():
                 val = msg_dict[key][key2]
+                # The subject is already writte, skip it
+                if (key2 == "Subject"):
+                    continue
+                # The attachment list will look weird if written as a python list
                 if (key2 == "attachments"):
                     files = ""
                     for attachment in val:

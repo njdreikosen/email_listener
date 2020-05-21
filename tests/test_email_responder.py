@@ -93,6 +93,14 @@ def test_send_singlepart_msg(email_responder, email_listener):
     msgs = email_listener.scrape()
 
     for key in msgs.keys():
+        # Test the subject
+        sub = msgs[key].get("Subject")
+        if sub is None:
+            subject_check = bool(sub is not None)
+        else:
+            subject_check = (sub.strip() == "EmailResponder Test")
+
+        # Test each of the other sections
         if ((msgs[key].get("Plain_HTML") is not None)
                 or (msgs[key].get("HTML") is not None)):
             check = False
@@ -143,6 +151,13 @@ def test_send_multipart_msg_text_only(email_responder, email_listener):
     msgs = email_listener.scrape()
 
     for key in msgs.keys():
+        # Test the subject
+        sub = msgs[key].get("Subject")
+        if sub is None:
+            subject_check = bool(sub is not None)
+        else:
+            subject_check = (sub.strip() == "EmailResponder Test")
+
         if ((msgs[key].get("Plain_HTML") is not None)
                 or (msgs[key].get("HTML") is not None)):
             check = False
@@ -165,7 +180,7 @@ def test_send_multipart_msg_text_only(email_responder, email_listener):
     email_listener.logout()
 
     # Check that there is only 1 new email and that it has the correct contents
-    assert ( len(msgs) == 1 ) and check
+    assert ( len(msgs) == 1 ) and subject_check and check
 
 
 #def test_send_multipart_msg_text_html(email_responder):
