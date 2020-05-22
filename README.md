@@ -1,8 +1,11 @@
 # email_listener
 
 [![Build Status](https://travis-ci.com/njdreikosen/email_listener.svg?branch=master)](https://travis-ci.com/njdreikosen/email_listener)
-
+[![codecov](https://codecov.io/gh/njdreikosen/email_listener/branch/master/graph/badge.svg)](https://codecov.io/gh/njdreikosen/email_listener)
+[![PyPI version shields.io](https://img.shields.io/pypi/v/ansicolortags.svg)](https://pypi.python.org/pypi/ansicolortags/)
+[![PyPI format](https://img.shields.io/pypi/format/ansicolortags.svg)](https://pypi.python.org/pypi/ansicolortags/)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![Wheel Status](https://pypip.in/wheel/email-listener/badge.svg)](https://pypi.python.org/pypi/email-listener/)
 
 email_listener is a Python package for listening in an email folder and processing incoming emails by scraping them, and optionally processing them with a custom processing script. Additionally, the EmailResponder class is included as an easy way to send reply emails.
 
