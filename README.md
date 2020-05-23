@@ -3,9 +3,9 @@
 [![Build Status](https://travis-ci.com/njdreikosen/email_listener.svg?branch=master)](https://travis-ci.com/njdreikosen/email_listener)
 [![codecov](https://codecov.io/gh/njdreikosen/email_listener/branch/master/graph/badge.svg)](https://codecov.io/gh/njdreikosen/email_listener)
 [![PyPI version shields.io](https://img.shields.io/pypi/v/ansicolortags.svg)](https://pypi.python.org/pypi/ansicolortags/)
-[![PyPI format](https://img.shields.io/pypi/format/ansicolortags.svg)](https://pypi.python.org/pypi/ansicolortags/)
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![PyPI pyversions](https://img.shields.io/pypi/pyversions/ansicolortags.svg)](https://pypi.python.org/pypi/ansicolortags/)
 [![Wheel Status](https://pypip.in/wheel/email-listener/badge.svg)](https://pypi.python.org/pypi/email-listener/)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
 email_listener is a Python package for listening in an email folder and processing incoming emails by scraping them, and optionally processing them with a custom processing script. Additionally, the EmailResponder class is included as an easy way to send reply emails.
 
@@ -30,6 +30,10 @@ el.login()
 # Get the emails currently unread in the inbox
 messages = el.scrape()
 print(messages)
+
+# Start listening to the inbox and timeout after an hour
+timeout = 60
+el.listen(timeout)
 ```
 
 The output:
@@ -59,7 +63,7 @@ The output, but prettier:
 }
 ```
 
-More detailed examples can be seen in each module.
+More detailed examples can be found in each module.
 
 
 ## How to Install
@@ -85,14 +89,12 @@ Once the unit test requirements are met, run the unit tests with the following c
 #### Unit Test Requirements
 Unit tests require a valid gmail account, which requires a few additions:
 - A label (or folder) named 'email_listener' must be created
-- A label (or folder) named 'email_listener2' must be created
 - A filter must be created, which moves any emails sent to '<Your email>+email_listener@gmail.com' to the email_listener label/folder
-- A filter must be created, which moves any emails sent to '<Your email>+email_listener2@gmail.com' to the email_listener2 label/folder
 
 Along with these changes, the following environmental variables must be created:
 `EL_EMAIL` and `EL_APW`
 
-For example, on the Debian OS, this can be done by adding the following to `/home/pi/.profile`:
+For example, on the Raspian OS, this can be done by adding the following to `/home/pi/.profile`:
 ```
 export EL_EMAIL="[Your Gmail email]"
 export EL_APW="[Your Google Account app password]"

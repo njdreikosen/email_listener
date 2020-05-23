@@ -111,6 +111,10 @@ class EmailListener:
 
         """
 
+        # Ensure server is connected
+        if type(self.server) is not IMAPClient:
+            raise ValueError("server attribute must be type IMAPClient")
+
         # List containing the file paths of each file created for an email message
         msg_dict = {}
 

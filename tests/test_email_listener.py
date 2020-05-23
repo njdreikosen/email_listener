@@ -165,6 +165,14 @@ def test_logout(email_listener):
     assert email_listener.server is None
 
 
+def test_scrape_invalid_server(email_listener):
+    """Check that scrape() raises a ValueError when EmailListener isn't logged in."""
+
+    # Check that the error is raised
+    with pytest.raises(ValueError) as err:
+        email_listener.scrape()
+
+
 def test_scrape_singlepart(email_listener, singlepart_email, cleanup):
     """Test the scraping functionality of scrape() for singlepart emails."""
 
@@ -376,6 +384,14 @@ def test_scrape_options(email_listener, singlepart_email, cleanup):
     # is found in the new folder not marked as seen, and that each of the emails
     # was deleted.
     assert (len(messages) == 1) and (len(messages2) == 1) and (len(messages3) == 0) and folder_check
+
+
+def test_listen_invalid_server(email_listener):
+    """Check that listen() raises a ValueError when EmailListener isn't logged in."""
+
+    # Check that the error is raised
+    with pytest.raises(ValueError) as err:
+        email_listener.listen(5)
 
 
 def test_listen(email_listener):
