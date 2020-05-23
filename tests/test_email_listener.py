@@ -4,9 +4,11 @@
 from imapclient import IMAPClient, SEEN
 import os
 import pytest
+from subprocess import Popen, PIPE
 # Imports from this package
 from email_listener import EmailListener
 from email_listener.email_responder import EmailResponder
+from email_listener.helpers import get_time
 
 
 @pytest.fixture
@@ -83,8 +85,9 @@ def multipart_email():
             '    <p>This is the HTML message.<br/>This is another line.<br/></p>\n'
             '  </body>\n'
             '</html>')
-    attachments = [os.path.join(os.path.dirname(os.path.abspath(__file__)),
-            "EmailListener_test.txt")]
+    attachments_path = os.path.dirname(os.path.abspath(__file__))
+    attachments = [os.path.join(attachments_path, "EmailListener_test.txt"),
+            os.path.join(attachments_path, "EmailListener_test2.txt")]
     email_responder.send_multipart_msg(recipient, subject, text, html=html,
             attachments=attachments)
     email_responder.logout()
@@ -299,20 +302,22 @@ def test_scrape_multipart(email_listener, multipart_email, cleanup):
         if attachments is None:
             checks.append( bool(attachments is not None) )
         else:
-            if len(attachments) == 1:
-                # If there is a file, open it and check the contents
-                if os.path.exists(attachments[0]):
-                    with open(attachments[0], 'r') as file:
-                        msg = file.readlines()
-                        checks.append((msg[0].strip() == "This is the attachment message.")
-                                and (msg[1].strip() == "This is another line."))
-                    # Delete the attachment
-                    os.remove(attachments[0])
-                # If the file doesn't exist, fail
-                else:
-                    checks.append( bool(os.path.exists(attachments)) )
+            if len(attachments) == 2:
+                for attachment in attachments:
+                    # If there is a file, open it and check the contents
+                    if os.path.exists(attachment):
+                        with open(attachment, 'r') as file:
+                            msg = file.readlines()
+                            checks.append((msg[0].strip() ==
+                                    "This is the attachment message.")
+                                    and (msg[1].strip() == "This is another line."))
+                        # Delete the attachment
+                        os.remove(attachment)
+                    # If the file doesn't exist, fail
+                    else:
+                        checks.append( bool(os.path.exists(attachment)) )
             else:
-                checks.append( bool(len(attachments) == 1) )
+                checks.append( bool(len(attachments) == 2) )
 
     # Check for the messages again, which should now be seen
     seen = email_listener.server.search("SEEN")
@@ -335,8 +340,12 @@ def test_scrape_options(email_listener, singlepart_email, cleanup):
     # Login
     email_listener.login()
 
+    # Check for whether the email_listener2 folder exists
+    folder_check = bool(not email_listener.server.folder_exists("email_listener2"))
+
     # Scrape the emails, moving them to a new folder, and removing the 'seen' flag
     messages = email_listener.scrape(move="email_listener2", unread=True)
+    folder_check = folder_check and email_listener.server.folder_exists("email_listener2")
 
     # Switch folders
     email_listener.server.select_folder("email_listener2", readonly=False)
@@ -345,6 +354,12 @@ def test_scrape_options(email_listener, singlepart_email, cleanup):
 
     # Ensure the emails were deleted
     messages3 = email_listener.scrape(unread=True)
+
+    # Remove the email_listener2 folder
+    email_listener.server.select_folder("email_listener", readonly=False)
+    email_listener.server.delete_folder("email_listener2")
+    folder_check = (folder_check and not
+            email_listener.server.folder_exists("email_listener2"))
 
     # Logout
     email_listener.logout()
@@ -360,24 +375,59 @@ def test_scrape_options(email_listener, singlepart_email, cleanup):
     # Check that the correct number of emails is found, that each of the emails
     # is found in the new folder not marked as seen, and that each of the emails
     # was deleted.
-    assert (len(messages) == 1) and (len(messages2) == 1) and (len(messages3) == 0)
+    assert (len(messages) == 1) and (len(messages2) == 1) and (len(messages3) == 0) and folder_check
 
 
-#def test_listen_no_process(email_listener):
+def test_listen(email_listener):
+    """ """
+
+    # Spawn a subprocess to send an email in a couple minutes
+    subproc_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+            "send_delayed_message.py")
+    subproc = Popen(["python3", "{}".format(subproc_path)], stdout=PIPE)
+
     # Login
+    email_listener.login()
+    # Set the timeout to a minute (will timeout in 5 minutes)
+    timeout = 1
 
+    # Get the starting time
+    start_time = get_time()
 
-#def test_listen_process(email_listener):
-#    pass
+    # Start the listening process
+    email_listener.listen(timeout, delete=True)
 
+    # Get the ending time
+    end_time = get_time()
 
-#@pytest.mark.slow
-#def test_listen_new_email():
-#    pass
+    # Calculate how long it took listen to timeout
+    t_out = end_time - start_time
 
+    # Get the list of written files
+    written_files = os.listdir(email_listener.attachment_dir)
+    for file in written_files:
+        # If it isn't a text file, ignore it
+        file_ext = file.split('.')[-1]
+        if (file_ext != "txt"):
+            continue
 
-#@pytest.mark.slow
-#def test_listen_timeout():
-#    pass
+        # Open the file, and check what's in it
+        file_path = os.path.join(email_listener.attachment_dir, file)
+        with open(file_path, 'r') as fp:
+            msg = fp.readlines()
+            msg_check = ((msg[0].strip() == "Subject")
+                    and (msg[1].strip() == "")
+                    and (msg[2].strip() == "Listen Test")
+                    and (msg[3].strip() == "")
+                    and (msg[4].strip() == "")
+                    and (msg[5].strip() == "Plain_Text")
+                    and (msg[6].strip() == "")
+                    and (msg[7].strip() == "Received during listen function."))
+        # Remove the file
+        os.remove(file_path)
 
+    # Check that exactly one file is written (plus provided .gitignore), that
+    # the contents of the file are as expected, and that listen() times out
+    # after 5 minutes.
+    assert (len(written_files) == 2) and msg_check and ((t_out >= 5*60) and (t_out <= (5*60)+30))
 

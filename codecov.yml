@@ -21,4 +21,5 @@ comment:
 
 ignore:
   - "tests/"
+  - "setup.py"
 

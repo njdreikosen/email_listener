@@ -31,6 +31,7 @@ from .helpers import (
     calc_timeout,
     get_time,
 )
+from .email_processing import write_to_file
 
 
 class EmailListener:
@@ -200,7 +201,8 @@ class EmailListener:
         return msg_dict
 
 
-    def listen(self, timeout, process_func=None, moves=None, unread=False, delete=False):
+    def listen(self, timeout, process_func=write_to_file, move=None,
+               unread=False, delete=False):
         """Listen in an email folder for incoming emails, and process them.
 
         Args:
@@ -212,7 +214,8 @@ class EmailListener:
                 None.
             process_func (function): A function called to further process the
                 emails. The function must take only the list of file paths
-                returned by the scrape function as an argument. Defaults to None.
+                returned by the scrape function as an argument. Defaults to the
+                example function write_to_file in the email_processing module.
 
         Returns:
             None
@@ -244,9 +247,8 @@ class EmailListener:
                     self.server.idle_done()
                     # Process the new emails
                     msgs = self.scrape(move=move, unread=unread, delete=delete)
-                    # If a process function is passed in
-                    if type(process_func) is 'function':
-                        process_func(msgs)
+                    # Run the process function
+                    process_func(self, msgs)
                     # Restart idling
                     self.server.idle()
             # Stop idling

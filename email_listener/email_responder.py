@@ -170,7 +170,8 @@ class EmailResponder:
                     # <img src="cid:image[i]">
                     # where [i] is the index of the image in images
                     with open(images[i], 'rb') as fp:
-                        img = MIMEImage(fp.read(), _subtype="png")
+                        img_type = images[i].split('.')[-1]
+                        img = MIMEImage(fp.read(), _subtype=img_type)
                         img.add_header('Content-ID', "<image{}>".format(i))
                     # Attach the image to the html part
                     msg_html.attach(img)

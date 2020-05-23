@@ -1,11 +1,8 @@
 """Test suite for the EmailResponder class."""
 
 # Imports from other packages
-from imapclient import IMAPClient
 import os
 import pytest
-import smtplib
-import time
 # Imports from this packages
 from email_listener.email_responder import EmailResponder
 from email_listener import EmailListener
@@ -266,4 +263,41 @@ def test_write_to_file(email_listener, multipart_email):
     # Check that there is only 1 new email, that it only has one line, and that
     # that line contains the message.
     assert subject_check and plain_text_check and plain_html_check and html_check and attachments_check
+
+
+def test_write_to_file_file_exists(email_listener, capsys):
+    """Test write_to_file when a file already exists."""
+
+    # Get the attachments directory, and create a test file
+    download_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "attachments")
+    test_file = os.path.join(download_dir, "file_exists.txt")
+    with open(test_file, 'w+') as file:
+        file.write("This is the original text.")
+
+    # Create a sample message dictionary (like the return value of scrape())
+    msgs = {'file_exists': {'Subject': 'Do not write', 'Plain_Text': 'Do not write'}}
+    # Clear any previous stdout output
+    captured = capsys.readouterr()
+
+    # Call the function
+    file_list = write_to_file(email_listener, msgs)
+    # Ensure the correct message is printed out
+    captured = capsys.readouterr()
+    test_out = captured.out.strip()
+
+    with open(test_file, 'r') as file:
+        lines = file.readlines()
+
+    # Delete any downloaded attachments
+    for file in os.listdir(download_dir):
+        file_ext = file.split('.')[-1]
+        if (file_ext == "txt"):
+            full_path = os.path.join(download_dir, file)
+            os.remove(full_path)
+
+    # Ensure the file has the correct number of lines
+    if len(lines) != 1:
+        assert(len(lines) == 1)
+
+    assert (test_out == "File has already been created.") and (lines[0].strip() == "This is the original text.")
 

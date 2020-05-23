@@ -1,18 +1,35 @@
-"""email_processing: Optional processing methods to be used with EmailListener.scrape.
+"""email_processing: Optional processing methods to be used with EmailListener.listen().
 
 Example:
 
-    # Pass to the scrape function
+    # Create the EmailListener
+    email = "example@gmail.com"
+    password = "badpassword"
+    folder = "Inbox"
+    attachment_dir = "/path/to/attachments"
+    el = EmailListener(email, password, folder, attachment_dir)
+
+    # Pass to the listen() function
+    timeout = 5
+    el.listen(timeout, process_func=write_to_file)
 
 """
 
 # Imports from other packages
 import os
-#from . import EmailListener
 
 
 def write_to_file(email_listener, msg_dict):
     """Write the email message data returned from scrape.
+
+    Args:
+        email_listener (EmailListener): The EmailListener object this function
+            is used with.
+        msg_dict (dict): The dictionary of email message data returned by the
+            scraping function.
+
+    Returns:
+        A list of file paths of files that were created and written to.
 
     """
 
