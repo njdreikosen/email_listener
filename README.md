@@ -3,7 +3,7 @@
 [![Build Status](https://travis-ci.com/njdreikosen/email_listener.svg?branch=master)](https://travis-ci.com/njdreikosen/email_listener)
 [![codecov](https://codecov.io/gh/njdreikosen/email_listener/branch/master/graph/badge.svg)](https://codecov.io/gh/njdreikosen/email_listener)
 [![PyPI version shields.io](https://img.shields.io/pypi/v/ansicolortags.svg)](https://pypi.python.org/pypi/ansicolortags/)
-[![PyPI pyversions](https://img.shields.io/pypi/pyversions/ansicolortags.svg)](https://pypi.python.org/pypi/ansicolortags/)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/email-listener)
 [![Wheel Status](https://pypip.in/wheel/email-listener/badge.svg)](https://pypi.python.org/pypi/email-listener/)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
