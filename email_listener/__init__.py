@@ -31,7 +31,7 @@ from .helpers import (
     calc_timeout,
     get_time,
 )
-from .email_processing import write_to_file
+from .email_processing import write_txt_file
 
 
 class EmailListener:
@@ -205,7 +205,7 @@ class EmailListener:
         return msg_dict
 
 
-    def listen(self, timeout, process_func=write_to_file, move=None,
+    def listen(self, timeout, process_func=write_txt_file, move=None,
                unread=False, delete=False):
         """Listen in an email folder for incoming emails, and process them.
 
@@ -219,7 +219,7 @@ class EmailListener:
             process_func (function): A function called to further process the
                 emails. The function must take only the list of file paths
                 returned by the scrape function as an argument. Defaults to the
-                example function write_to_file in the email_processing module.
+                example function write_txt_file in the email_processing module.
 
         Returns:
             None
