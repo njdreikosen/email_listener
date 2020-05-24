@@ -103,25 +103,24 @@ class EmailResponder:
         self.server = None
 
 
-    def send_singlepart_msg(self, recipient, subject, message):
+    def send_singlepart_msg(self, recipient, subject, text):
         """Sends a plain text email to the recipient.
 
         Args:
             recipient (str): The email address to send the email to.
             subject (str): The subject of the email.
-            message (str): The message of the email.
+            text (str): The message of the email.
 
         Returns:
             None
 
         """
 
-        msg = "Subject: {}\n\n{}".format(subject, message)
+        msg = "Subject: {}\n\n{}".format(subject, text)
         self.server.sendmail(self.email, recipient, msg)
 
 
-    def send_multipart_msg(self, recipient, subject, text, html=None, images=None,
-                            attachments=None):
+    def send_multipart_msg(self, recipient, subject, text, **kwargs):
         """Sends a multipart (MIME) email to the recipient.
 
         Args:
@@ -140,6 +139,11 @@ class EmailResponder:
 
         """
 
+        # Process kwargs
+        html = kwargs.get('html')
+        images = kwargs.get('images')
+        attachments = kwargs.get('attachments')
+
         # Overall message object
         msg = MIMEMultipart("mixed")
         msg["Subject"] = subject
@@ -147,51 +151,47 @@ class EmailResponder:
         msg["To"] = recipient
 
         # Create the body
-        if (text is not None) or (html is not None):
-            msg_body = MIMEMultipart("alternative")
+        msg_body = MIMEMultipart("alternative")
+        msg_body.attach(MIMEText(text, "plain"))
 
-            # If there is a plain text part, attach it
-            if text is not None:
-                msg_body.attach(MIMEText(text, "plain"))
+        # If there is an html part, attach it
+        if html is not None:
+            # Create a new multipart section
+            msg_html = MIMEMultipart("related")
+            # Attach the html text
+            msg_html.attach(MIMEText(html, "html"))
 
-            # If there is an html part, attach it
-            if html is not None:
-                # Create a new multipart section
-                msg_html = MIMEMultipart("related")
-                # Attach the html text
-                msg_html.attach(MIMEText(html, "html"))
+            # If there are images, include them
+            for i in range(len(images or [])):
+                # Open the image, read it, and name it so that it can be
+                # referenced by name in the html as:
+                # <img src="cid:image[i]">
+                # where [i] is the index of the image in images
+                fp = open(images[i], 'rb')
+                img_type = images[i].split('.')[-1]
+                img = MIMEImage(fp.read(), _subtype=img_type)
+                img.add_header('Content-ID', "<image{}>".format(i))
+                fp.close()
+                # Attach the image to the html part
+                msg_html.attach(img)
 
-                # If there are images, include them
-                if images is None:
-                    images = []
-                for i in range(len(images)):
-                    # Open the image, read it, and name it so that it can be
-                    # referenced by name in the html as:
-                    # <img src="cid:image[i]">
-                    # where [i] is the index of the image in images
-                    with open(images[i], 'rb') as fp:
-                        img_type = images[i].split('.')[-1]
-                        img = MIMEImage(fp.read(), _subtype=img_type)
-                        img.add_header('Content-ID', "<image{}>".format(i))
-                    # Attach the image to the html part
-                    msg_html.attach(img)
+            # Attach the html section to the alternative section
+            msg_body.attach(msg_html)
 
-                # Attach the html section to the alternative section
-                msg_body.attach(msg_html)
-
-            # Attach the alternative section to the message
-            msg.attach(msg_body)
+        # Attach the alternative section to the message
+        msg.attach(msg_body)
 
         # Attach each attachment
         for file in attachments or []:
             # Open the file
-            with open(file, "rb") as f:
-                # Read in the file, and give set the header
-                part = MIMEApplication(f.read())
-                part.add_header('Content-Disposition',
-                        "attachment; filename={}".format(os.path.basename(file)))
-                # Attach the attachment to the message
-                msg.attach(part)
+            f = open(file, "rb")
+            # Read in the file, and give set the header
+            part = MIMEApplication(f.read())
+            part.add_header('Content-Disposition',
+                    "attachment; filename={}".format(os.path.basename(file)))
+            # Attach the attachment to the message
+            f.close()
+            msg.attach(part)
 
         # Send the email
         self.server.sendmail(self.email, recipient, msg.as_string())

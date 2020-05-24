@@ -46,28 +46,57 @@ def write_txt_file(email_listener, msg_dict):
             continue
 
         # Open the file
-        with open(file_path, "w+") as file:
-            # Write the subject to the file
-            file.write("Subject\n\n{}\n\n\n".format(msg_dict[key].get("Subject")))
-            # Write each section to the file
-            for key2 in msg_dict[key].keys():
-                val = msg_dict[key][key2]
-                # The subject is already writte, skip it
-                if (key2 == "Subject"):
-                    continue
-                # The attachment list will look weird if written as a python list
-                if (key2 == "attachments"):
-                    files = ""
-                    for attachment in val:
-                        files = "{}{}\n".format(files, attachment)
-                    val = files
-
-                file.write("{}\n\n{}\n\n\n".format(key2, val.strip()))
+        file = open(file_path, "w+")
+        # Conver the message data to a string, and write it to the file
+        msg_string = __msg_to_str(msg_dict[key])
+        file.write(msg_string)
+        file.close()
         # Add the file name to the return list
         file_list.append(file_path)
 
     return file_list
 
+
+def __msg_to_str(msg):
+    """Convert a dictionary containing message data to a string.
+
+    Args:
+        msg (dict): The dictionary containing the message data.
+
+    Returns:
+        A string version of the message
+
+    """
+
+    # String to be returned
+    msg_string = ""
+    
+    # Append the subject
+    subject = msg.get('Subject')
+    msg_string += "Subject\n\n{}\n\n\n".format(subject)
+
+    # Append the plain text
+    plain_text = msg.get('Plain_Text')
+    if plain_text is not None:
+        msg_string += "Plain_Text\n\n{}\n\n\n".format(plain_text)
+
+    # Append the plain html and html
+    plain_html = msg.get('Plain_HTML')
+    html = msg.get('HTML')
+    if plain_html is not None:
+        msg_string += "Plain_HTML\n\n{}\n\n\n".format(plain_html)
+        msg_string += "HTML\n\n{}\n\n\n".format(html)
+
+    # Append the attachment list
+    attachments = msg.get('attachments')
+    if attachments is None:
+        return msg_string
+
+    msg_string += "attachments\n\n"
+    for file in attachments:
+        msg_string += "{}\n".format(file)
+
+    return msg_string
 
 def send_basic_reply(email_listener, msg_dict):
     """Write the messages to files, and then send a simple automated reply.
@@ -133,9 +162,10 @@ def write_json_file(email_listener, msg_dict):
         json_obj = json.dumps(msg_dict[key], indent = 4)
 
         # Open the file
-        with open(file_path, "w+") as file:
-            # Write the json object to the file
-            file.write(json_obj)
+        file = open(file_path, "w+")
+        # Write the json object to the file
+        file.write(json_obj)
+        file.close()
         # Add the file name to the return list
         file_list.append(file_path)
 

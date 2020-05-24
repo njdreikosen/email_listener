@@ -247,8 +247,6 @@ def test_write_txt_file(email_listener, multipart_email):
                         attachment_path = os.path.join(os.path.join(os.path.dirname(
                                 os.path.abspath(__file__)), "attachments"),
                                 "EmailListener_test.txt")
-                        print(attachment_path)
-                        print(test_arr[0].strip())
                         attachments_check = (test_arr[0].strip()==attachment_path.strip())
 
                 # If an unexpected section is found
@@ -487,7 +485,6 @@ def test_write_json_file(email_listener, multipart_email):
                     if os.path.exists(attachments[0]):
                         with open(attachments[0], 'r') as file:
                             msg = file.readlines()
-                            print(msg)
                             if (len(msg) == 3):
                                 attachment_check = ((msg[0].strip() ==
                                         "This is the attachment message.")

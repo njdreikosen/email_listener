@@ -235,7 +235,7 @@ class EmailListener:
 
         # Run until the timeout is reached
         while (get_time() < outer_timeout):
-            self.idle(process_func=process_func, **kwargs)
+            self.__idle(process_func=process_func, **kwargs)
         return
 
 
