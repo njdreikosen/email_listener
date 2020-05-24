@@ -158,8 +158,9 @@ class EmailListener:
                     if bool(file_name):
                         # Generate file path
                         file_path = os.path.join(self.attachment_dir, file_name)
-                        with open(file_path, 'wb') as file:
-                            file.write(part.get_payload(decode=True))
+                        file = open(file_path, 'wb')
+                        file.write(part.get_payload(decode=True))
+                        file.close()
                         attachment_list = val_dict.get("attachments")
                         if attachment_list is None:
                             val_dict["attachments"] = ["{}".format(file_path)]
@@ -205,8 +206,7 @@ class EmailListener:
         return msg_dict
 
 
-    def listen(self, timeout, process_func=write_txt_file, move=None,
-               unread=False, delete=False):
+    def listen(self, timeout, process_func=write_txt_file, **kwargs):
         """Listen in an email folder for incoming emails, and process them.
 
         Args:
@@ -231,31 +231,53 @@ class EmailListener:
             raise ValueError("server attribute must be type IMAPClient")
 
         # Get the timeout value
-        outer_timeout = calc_timeout(timeout)        
+        outer_timeout = calc_timeout(timeout)
 
         # Run until the timeout is reached
         while (get_time() < outer_timeout):
-            # Start idling
-            self.server.idle()
-            print("Connection is now in IDLE mode.")
-            # Set idle timeout to 5 minutes
-            inner_timeout = get_time() + 60*5
-            # Until idle times out
-            while (get_time() < inner_timeout):
-                # Check for a new response every 30 seconds
-                responses = self.server.idle_check(timeout=30)
-                print("Server sent:", responses if responses else "nothing")
-                # If there is a response
-                if (responses):
-                    # Suspend the idling
-                    self.server.idle_done()
-                    # Process the new emails
-                    msgs = self.scrape(move=move, unread=unread, delete=delete)
-                    # Run the process function
-                    process_func(self, msgs)
-                    # Restart idling
-                    self.server.idle()
-            # Stop idling
-            self.server.idle_done()
+            self.idle(process_func=process_func, **kwargs)
         return
 
+
+    def __idle(self, process_func=write_txt_file, **kwargs):
+        """Helper function, idles in an email folder processing incoming emails.
+
+        Args:
+            process_func (function): A function called to further process the
+                emails. The function must take only the list of file paths
+                returned by the scrape function as an argument. Defaults to the
+                example function write_txt_file in the email_processing module.
+
+        Returns:
+            None
+
+        """
+
+        # Set the relevant kwarg variables
+        move = kwargs.get('move')
+        unread = bool(kwargs.get('unread'))
+        delete = bool(kwargs.get('delete'))
+
+        # Start idling
+        self.server.idle()
+        print("Connection is now in IDLE mode.")
+        # Set idle timeout to 5 minutes
+        inner_timeout = get_time() + 60*5
+        # Until idle times out
+        while (get_time() < inner_timeout):
+            # Check for a new response every 30 seconds
+            responses = self.server.idle_check(timeout=30)
+            print("Server sent:", responses if responses else "nothing")
+            # If there is a response
+            if (responses):
+                # Suspend the idling
+                self.server.idle_done()
+                # Process the new emails
+                msgs = self.scrape(move=move, unread=unread, delete=delete)
+                # Run the process function
+                process_func(self, msgs)
+                # Restart idling
+                self.server.idle()
+        # Stop idling
+        self.server.idle_done()
+        return
