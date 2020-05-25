@@ -211,12 +211,10 @@ class EmailListener:
                 file = open(file_path, 'wb')
                 file.write(part.get_payload(decode=True))
                 file.close()
-                attachment_list = val_dict.get("attachments")
-                if attachment_list is None:
-                    val_dict["attachments"] = ["{}".format(file_path)]
-                else:
-                    attachment_list.append("{}".format(file_path))
-                    val_dict["attachments"] = attachment_list
+                # Get the list of attachments, or initialize it if there isn't one
+                attachment_list = val_dict.get("attachments") or []
+                attachment_list.append("{}".format(file_path))
+                val_dict["attachments"] = attachment_list
 
             # If the part is html text
             elif part.get_content_type() == 'text/html':

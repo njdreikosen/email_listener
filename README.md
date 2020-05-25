@@ -2,6 +2,7 @@
 
 [![Build Status](https://travis-ci.com/njdreikosen/email_listener.svg?branch=master)](https://travis-ci.com/njdreikosen/email_listener)
 [![codecov](https://codecov.io/gh/njdreikosen/email_listener/branch/master/graph/badge.svg)](https://codecov.io/gh/njdreikosen/email_listener)
+[![Maintainability](https://api.codeclimate.com/v1/badges/bc3e61eb9d5870824e69/maintainability)](https://codeclimate.com/github/njdreikosen/email_listener/maintainability)
 [![PyPI version](https://badge.fury.io/py/email-listener.svg)](https://badge.fury.io/py/email-listener)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/email-listener)
 [![Wheel Status](https://pypip.in/wheel/email-listener/badge.svg)](https://pypi.python.org/pypi/email-listener/)
