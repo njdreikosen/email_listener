@@ -199,9 +199,9 @@ class EmailListener:
 
         # For each part
         for part in email_message.walk():
-            # If the part is multipart, pass
-            if part.get_content_maintype() == 'multipart':
-                continue
+#            # If the part is multipart, pass
+#            if part.get_content_maintype() == 'multipart':
+#                continue
 
             # If the part is an attachment
             file_name = part.get_filename()
