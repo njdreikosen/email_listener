@@ -98,6 +98,7 @@ def __msg_to_str(msg):
 
     return msg_string
 
+
 def send_basic_reply(email_listener, msg_dict):
     """Write the messages to files, and then send a simple automated reply.
 

@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name='email_listener',
-    version='1.1',
+    version='1.2',
     description='Listen in an email folder and process incoming emails.',
     long_description=long_description,
     long_description_content_type="text/markdown",

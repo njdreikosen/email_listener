@@ -118,6 +118,7 @@ class EmailResponder:
 
         msg = "Subject: {}\n\n{}".format(subject, text)
         self.server.sendmail(self.email, recipient, msg)
+        return
 
 
     def send_multipart_msg(self, recipient, subject, text, **kwargs):
@@ -127,12 +128,13 @@ class EmailResponder:
             recipient (str): The email address to send the email to.
             subject (str): The subject of the email.
             text (str): The plain text version of the message.
-            html (str): The HTML version of the message. Optional argument that
-                defaults to None.
-            images (list): A list of imbedded image file paths for the HTML
-                messages. Optional argument that defaults to None.
-            attachments (list): A list of file paths for files to attach to the
-                email. Optional argument that defaults to None.
+            **kwargs (dict): Additional message parts. Options include:
+                    html (str): The HTML version of the message. Optional
+                        argument that defaults to None.
+                    images (list): A list of imbedded image file paths for the
+                        HTML messages. Optional argument that defaults to None.
+                    attachments (list): A list of file paths for files to attach
+                        to the email. Optional argument that defaults to None.
 
         Returns:
             None
@@ -195,4 +197,5 @@ class EmailResponder:
 
         # Send the email
         self.server.sendmail(self.email, recipient, msg.as_string())
+        return
 
