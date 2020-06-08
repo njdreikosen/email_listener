@@ -5,6 +5,7 @@ from imapclient import IMAPClient, SEEN
 import os
 import pytest
 from subprocess import Popen, PIPE
+import smtplib, ssl
 # Imports from this package
 from email_listener import EmailListener
 from email_listener.email_responder import EmailResponder
@@ -92,6 +93,33 @@ def multipart_email():
             attachments=attachments)
     email_responder.logout()
 
+    # Run the other fixtures and test
+    yield
+
+
+@pytest.fixture
+def no_subject_email():
+    """Send a singlepart test email with no subject."""
+
+    # Create an email responder
+    email = os.environ['EL_EMAIL']
+    app_password = os.environ['EL_APW']
+    context = ssl.create_default_context()
+    server = smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context)
+    server.login(email, app_password)
+
+    # Set the recipient as this email, in the email_listener folder
+    recipient_parts = email.split('@')
+    recipient = "{}+email_listener@{}".format(recipient_parts[0], recipient_parts[1])
+
+    # Create the test email
+    text = "This is the plain text message.\nThis is another line.\n"
+    # Send the message
+    server.sendmail(email, recipient, text)
+
+    # Log out
+    server.quit()
+    server = None
     # Run the other fixtures and test
     yield
 
@@ -227,7 +255,6 @@ def test_scrape_singlepart(email_listener, singlepart_email, cleanup):
     assert (len(messages) == 1) and all(checks) and (len(seen) == 1)
 
 
-
 def test_scrape_multipart(email_listener, multipart_email, cleanup):
     """Test the scraping functionality of scrape() for multipart emails."""
 
@@ -342,6 +369,60 @@ def test_scrape_multipart(email_listener, multipart_email, cleanup):
     assert (len(messages) == 1) and all(checks) and (len(seen) == 1)
 
 
+def test_scrape_no_subject(email_listener, no_subject_email, cleanup):
+    """Test the scraping functionality of scrape() for emails with no subject."""
+
+    # Login
+    email_listener.login()
+
+    # Scrape the emails, but don't move them
+    messages = email_listener.scrape()
+
+    # Go through each return message and make sure they contain what they should
+    checks = []
+    for key in messages.keys():
+        # Test the subject
+        subject = messages[key].get("Subject")
+        if subject is None:
+            checks.append( bool(subject is not None) )
+        else:
+            checks.append(subject.strip() == "No Subject")
+
+        # Test the plain text message
+        plain_text = messages[key].get("Plain_Text")
+        if plain_text is None:
+            checks.append( bool(plain_text is not None) )
+        else:
+            # Split the message up by lines, and remove extra whitespace
+            plain_text = plain_text.strip().splitlines()
+            # There will be two lines if the message isn't blank
+            if len(plain_text) == 2:
+                checks.append((plain_text[0].strip() == "This is the plain text message.")
+                        and (plain_text[1].strip() == "This is another line."))
+            else:
+                checks.append( bool(len(plain_text) == 2) )
+
+        # Make sure there is no html or attachments
+        plain_html = messages[key].get("Plain_HTML")
+        html = messages[key].get("HTML")
+        attachments = messages[key].get("attachments")
+        checks.append( (plain_html is None) and (html is None) and (attachments is None) )
+
+    # Check for the messages again, which should now be seen
+    seen = email_listener.server.search("SEEN")
+    # Move emails back to original folder
+    for uid, message_data in email_listener.server.fetch(seen, 'RFC822').items():
+        email_listener.server.remove_flags(uid, [SEEN])
+
+    # Logout
+    email_listener.logout()
+
+    # Check that the correct number of emails is found, each section
+    # contains what it should, each of the emails is marked as seen, and
+    # are still in the same folder.
+    assert (len(messages) == 1) and all(checks) and (len(seen) == 1)
+
+
 def test_scrape_options(email_listener, singlepart_email, cleanup):
     """Test the optional inputs for the scrape function."""
 
@@ -395,7 +476,7 @@ def test_listen_invalid_server(email_listener):
 
 
 def test_listen(email_listener):
-    """ """
+    """Test the liste function."""
 
     # Spawn a subprocess to send an email in a couple minutes
     subproc_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),

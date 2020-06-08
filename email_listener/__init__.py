@@ -141,7 +141,7 @@ class EmailListener:
             print("PROCESSING: Email UID = {} from {}".format(uid, from_email))
 
             # Add the subject
-            val_dict["Subject"] = email_message.get('Subject').strip()
+            val_dict["Subject"] = self.__get_subject(email_message).strip()
 
             # If the email has multiple parts
             if email_message.is_multipart():
@@ -183,6 +183,19 @@ class EmailListener:
         return from_email
 
 
+    def __get_subject(self, email_message):
+        """
+
+        """
+
+        # Get the subject
+        subject = email_message.get("Subject")
+        # If there isn't a subject
+        if subject is None:
+            return "No Subject"
+        return subject
+
+
     def __parse_multipart_message(self, email_message, val_dict):
         """Helper function for parsing multipart email messages.
 
@@ -199,10 +212,6 @@ class EmailListener:
 
         # For each part
         for part in email_message.walk():
-#            # If the part is multipart, pass
-#            if part.get_content_maintype() == 'multipart':
-#                continue
-
             # If the part is an attachment
             file_name = part.get_filename()
             if bool(file_name):
