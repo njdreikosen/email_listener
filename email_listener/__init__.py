@@ -69,7 +69,7 @@ class EmailListener:
         self.server = None
 
 
-    def login(self):
+    def login(self,imap_server):
         """Logs in the EmailListener to the IMAP server.
 
         Args:
@@ -80,7 +80,7 @@ class EmailListener:
 
         """
 
-        self.server = IMAPClient('imap.gmail.com')
+        self.server = IMAPClient(imap_server)
         self.server.login(self.email, self.app_password)
         self.server.select_folder(self.folder, readonly=False)
 
