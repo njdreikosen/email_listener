@@ -324,7 +324,7 @@ def test_send_basic_reply(email_listener):
 
     # There should be exactly one file written
     if (len(file_list) != 1):
-        assert (len(file_llist) == 1)
+        assert len(file_list) == 1
 
     # Read the file and check its contents
     with open(file_list[0], 'r') as file:
