@@ -6,7 +6,7 @@ python:
 os: linux
 arch:
 - arm64
-- ppc641e
+- ppc64le
 - s390x
 script:
 - pytest --cov=./
