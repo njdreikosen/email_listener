@@ -3,6 +3,11 @@ python:
 - '3.6'
 - '3.7'
 - '3.8'
+os: linux
+arch:
+- arm64
+- ppc641e
+- s390x
 script:
 - pytest --cov=./
 install:
