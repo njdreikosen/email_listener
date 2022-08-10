@@ -1,7 +1,9 @@
 """email_processing: Optional processing methods to be used with EmailListener.listen().
 
 Example:
-
+    from email_listener import email_processing
+    
+    
     # Create the EmailListener
     email = "example@gmail.com"
     password = "badpassword"
@@ -11,7 +13,7 @@ Example:
 
     # Pass to the listen() function
     timeout = 5
-    el.listen(timeout, process_func=write_txt_file)
+    el.listen(timeout, process_func=email_processing.write_json_file)
 
 """
 
